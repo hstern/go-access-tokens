@@ -40,6 +40,68 @@ Bootstrap / pre-v0.1.0. The public API is not yet stable.
 go get github.com/hstern/go-access-tokens
 ```
 
+## Quickstart
+
+### Resource server — validate an access token
+
+Verify the JWS signature with your JOSE library first, then validate the
+RFC 9068 claim profile:
+
+```go
+tok, err := accesstoken.Parse(rawToken) // decodes; does NOT verify the signature
+if err != nil {
+	// malformed token
+}
+
+// ... verify tok.Raw's JWS signature with your JOSE library here ...
+
+err = tok.Validate(
+	accesstoken.WithIssuer("https://as.example.com/"),
+	accesstoken.WithAudience("https://rs.example.com/"), // this RS's identifier
+)
+if err != nil {
+	// map any failure to RFC 6750 invalid_token / HTTP 401
+	if errors.Is(err, accesstoken.ErrExpired) { /* ... */ }
+}
+
+subject := tok.Claims.Subject
+scopes := tok.Claims.ScopeValues()
+```
+
+If your JOSE layer already handed you the verified payload bytes, skip `Parse`
+and use `accesstoken.ParseClaims(payload)` + `claims.Validate(...)`.
+
+### Authorization server — build an access token
+
+```go
+c := &accesstoken.Claims{
+	Issuer:   "https://as.example.com/",
+	Subject:  "user-123",
+	Audience: accesstoken.Audience{"https://rs.example.com/"},
+	Expires:  accesstoken.NewNumericDate(time.Now().Add(time.Hour)),
+	IssuedAt: accesstoken.NewNumericDate(time.Now()),
+	JWTID:    "id-1",
+	ClientID: "client-abc",
+}
+c.SetScope("read", "write")
+
+payload, err := c.Encode()           // strict: errors if a required claim is missing
+header := accesstoken.NewHeader("RS256", "key-1") // {"typ":"at+jwt",...}
+// ... sign header + payload with your JOSE library ...
+```
+
+### Typed extension claims
+
+Claims outside the typed §2.2 surface (identity claims, custom claims) round-trip
+through `Extra`; read and write them typed:
+
+```go
+var email string
+present, _ := tok.Claims.GetExtra("email", &email)
+
+_ = c.SetExtra("tenant", Tenant{ID: 42, Name: "acme"})
+```
+
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).
