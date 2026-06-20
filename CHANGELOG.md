@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-20
+
 ### Removed
 
 - `BearerToken` and `ErrNoBearerToken` (added in v0.2.0). RFC 6750 Bearer Token
@@ -55,6 +57,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Claims.Encode` (strict required-claim check at the marshal boundary) plus
   `ScopeValues`/`SetScope` and `GetExtra`/`SetExtra` helpers.
 
-[Unreleased]: https://github.com/hstern/go-access-tokens/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/hstern/go-access-tokens/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/hstern/go-access-tokens/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hstern/go-access-tokens/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hstern/go-access-tokens/releases/tag/v0.1.0
