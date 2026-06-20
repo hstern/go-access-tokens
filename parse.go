@@ -36,6 +36,12 @@ type Token struct {
 // in particular, does not verify the signature.
 func Parse(token string) (*Token, error) {
 	parts := strings.Split(token, ".")
+	if len(parts) == 5 {
+		// JWE compact serialization (RFC 7516): header.encrypted_key.iv.
+		// ciphertext.tag. Decryption is out of scope (it needs a JOSE/crypto
+		// stack); the caller decrypts and passes the plaintext to ParseClaims.
+		return nil, &ValidationError{Reason: "decrypt with a JOSE library, then use ParseClaims", err: ErrEncrypted}
+	}
 	if len(parts) != 3 {
 		return nil, malformedf("compact serialization must have 3 segments, got %d", len(parts))
 	}

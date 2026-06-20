@@ -62,6 +62,15 @@ func TestParseMalformed(t *testing.T) {
 	}
 }
 
+func TestParseEncrypted(t *testing.T) {
+	// A JWE compact serialization has five segments; Parse must report it as
+	// encrypted rather than malformed, so the caller knows to decrypt first.
+	jwe := "header.encrypted_key.iv.ciphertext.tag"
+	if _, err := Parse(jwe); !errors.Is(err, ErrEncrypted) {
+		t.Errorf("err = %v, want ErrEncrypted", err)
+	}
+}
+
 func TestParseClaims(t *testing.T) {
 	c, err := ParseClaims([]byte(figure2))
 	if err != nil {
