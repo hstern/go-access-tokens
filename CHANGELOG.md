@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-20
+
+### Added
+
+- Sender-constrained access tokens (RFC 9449 DPoP / RFC 8705 mTLS): the typed
+  `cnf` confirmation claim (`Confirmation`, RFC 7800) with `jkt` and `x5t#S256`
+  members, plus opt-in binding validation via `WithDPoPKeyThumbprint` and
+  `WithCertificateThumbprint` (new `ErrConfirmationMismatch` sentinel). The
+  caller computes the thumbprint from the verified DPoP proof / client
+  certificate; the library checks the binding only.
+- `Builder` — a fluent constructor for the authorization-server side, with
+  `Build` (validates required claims) and `Encode`.
+- `BearerToken(*http.Request)` — RFC 6750 §2.1 Authorization-header token
+  extraction (new `ErrNoBearerToken` sentinel).
+- `Parse` now reports a JWE (5-segment) token with `ErrEncrypted` instead of a
+  generic malformed error, signalling the caller to decrypt upstream.
+
 ## [0.1.0] - 2026-06-20
 
 ### Added
@@ -23,5 +40,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Claims.Encode` (strict required-claim check at the marshal boundary) plus
   `ScopeValues`/`SetScope` and `GetExtra`/`SetExtra` helpers.
 
-[Unreleased]: https://github.com/hstern/go-access-tokens/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/hstern/go-access-tokens/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/hstern/go-access-tokens/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hstern/go-access-tokens/releases/tag/v0.1.0
