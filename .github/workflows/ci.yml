@@ -32,5 +32,6 @@ jobs:
       # Go toolchain. The prebuilt binaries shipped by golangci-lint-action are
       # built with an older Go and refuse to run against this module's newer
       # `go` directive ("language version used to build golangci-lint is lower
-      # than the targeted Go version").
-      - run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...
+      # than the targeted Go version"). Pinned for reproducible CI
+      # (matches go-token-introspection).
+      - run: go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run ./...
