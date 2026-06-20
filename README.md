@@ -40,6 +40,11 @@ scope and belong in dedicated libraries:
   the sibling [`go-token-introspection`](https://github.com/hstern/go-token-introspection)
   (RFC 7662).
 
+For worked examples of wiring [go-jose](https://github.com/go-jose/go-jose)
+around this library for each of those crypto concerns — JWS verification,
+JWE decryption, and DPoP / mTLS sender-constraint binding — see
+**[docs/integration.md](docs/integration.md)**.
+
 ## Status
 
 **v0.2.0.** Pre-1.0: the public API may still change within the `v0.x`
@@ -57,7 +62,8 @@ go get github.com/hstern/go-access-tokens
 ### Resource server — validate an access token
 
 Verify the JWS signature with your JOSE library first, then validate the
-RFC 9068 claim profile:
+RFC 9068 claim profile (see [docs/integration.md](docs/integration.md) for the
+go-jose verification, decryption, and DPoP/mTLS code):
 
 ```go
 tok, err := accesstoken.Parse(rawToken) // decodes; does NOT verify the signature
