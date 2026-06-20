@@ -49,6 +49,10 @@ type Claims struct {
 	Roles        []string `json:"roles,omitempty"`
 	Entitlements []string `json:"entitlements,omitempty"`
 
+	// Confirmation (cnf, RFC 7800) carries the sender-constraining key
+	// binding: jkt for DPoP (RFC 9449), x5t#S256 for mTLS (RFC 8705).
+	Confirmation *Confirmation `json:"cnf,omitempty"`
+
 	// Extra holds claims not captured by the typed fields above — identity
 	// claims (§2.2.2) and any extension/registered claim. Values are kept as
 	// raw JSON for byte-stable round-trips and zero-cost pass-through; use
@@ -61,7 +65,7 @@ type Claims struct {
 var knownClaims = map[string]struct{}{
 	"iss": {}, "sub": {}, "aud": {}, "exp": {}, "iat": {}, "jti": {},
 	"client_id": {}, "nbf": {}, "auth_time": {}, "acr": {}, "amr": {},
-	"scope": {}, "groups": {}, "roles": {}, "entitlements": {},
+	"scope": {}, "groups": {}, "roles": {}, "entitlements": {}, "cnf": {},
 }
 
 // UnmarshalJSON decodes the typed claims and routes every other member of the

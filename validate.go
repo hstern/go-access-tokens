@@ -28,6 +28,12 @@ var (
 	ErrExpired = errors.New("accesstoken: token expired")
 	// ErrNotYetValid indicates the current time is before nbf/iat (§4).
 	ErrNotYetValid = errors.New("accesstoken: token not yet valid")
+	// ErrConfirmationMismatch indicates the cnf binding (RFC 7800) did not
+	// match the expected DPoP key or client-certificate thumbprint.
+	ErrConfirmationMismatch = errors.New("accesstoken: confirmation mismatch")
+	// ErrEncrypted indicates the token is a JWE (encrypted); decrypt it with a
+	// JOSE library, then decode the plaintext payload with ParseClaims.
+	ErrEncrypted = errors.New("accesstoken: token is encrypted (JWE)")
 )
 
 // ValidationError is the typed error returned by the validation and codec
@@ -66,6 +72,10 @@ type config struct {
 	checkAud    bool
 	now         func() time.Time
 	leeway      time.Duration
+	jkt         string
+	checkJKT    bool
+	x5t         string
+	checkX5T    bool
 }
 
 func newConfig(opts []Option) config {
@@ -102,6 +112,24 @@ func WithClock(now func() time.Time) Option {
 // permits a small leeway). Defaults to zero.
 func WithLeeway(d time.Duration) Option {
 	return func(c *config) { c.leeway = d }
+}
+
+// WithDPoPKeyThumbprint requires the token's cnf claim to bind the DPoP
+// proof-of-possession key whose JWK SHA-256 thumbprint is jkt (RFC 9449 §6,
+// RFC 7800). The caller computes jkt from the verified DPoP proof's public key;
+// this library only checks that cnf.jkt matches. A token with no cnf, or a
+// mismatched jkt, fails with ErrConfirmationMismatch.
+func WithDPoPKeyThumbprint(jkt string) Option {
+	return func(c *config) { c.jkt, c.checkJKT = jkt, true }
+}
+
+// WithCertificateThumbprint requires the token's cnf claim to bind the mTLS
+// client certificate whose SHA-256 thumbprint is x5t (the cnf "x5t#S256"
+// member; RFC 8705 §3.1, RFC 7800). The caller computes x5t from the presented
+// client certificate; this library only checks that cnf matches. A token with
+// no cnf, or a mismatched thumbprint, fails with ErrConfirmationMismatch.
+func WithCertificateThumbprint(x5t string) Option {
+	return func(c *config) { c.x5t, c.checkX5T = x5t, true }
 }
 
 // ValidType reports whether typ is an acceptable access-token media type
@@ -143,6 +171,17 @@ func (c *Claims) Validate(opts ...Option) error {
 	}
 	if c.IssuedAt != nil && now.Add(cfg.leeway).Before(c.IssuedAt.Time) {
 		return &ValidationError{Claim: "iat", Reason: "issued in the future", err: ErrNotYetValid}
+	}
+
+	if cfg.checkJKT {
+		if c.Confirmation == nil || c.Confirmation.JWKThumbprint != cfg.jkt {
+			return &ValidationError{Claim: "cnf", Reason: "DPoP key thumbprint (jkt) does not match", err: ErrConfirmationMismatch}
+		}
+	}
+	if cfg.checkX5T {
+		if c.Confirmation == nil || c.Confirmation.X509Thumbprint != cfg.x5t {
+			return &ValidationError{Claim: "cnf", Reason: "certificate thumbprint (x5t#S256) does not match", err: ErrConfirmationMismatch}
+		}
 	}
 	return nil
 }
