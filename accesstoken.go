@@ -19,11 +19,21 @@
 //  2. verify its JWS signature with a JOSE library;
 //  3. hand the token here to decode and validate the RFC 9068 claim profile.
 //
-// Use [Parse] for the compact token string (header + claims), or [ParseClaims]
+// Use [BearerToken] to pull the token from an [*net/http.Request] (RFC 6750),
+// then [Parse] for the compact token string (header + claims), or [ParseClaims]
 // when your JOSE layer already gave you the verified payload bytes. Then call
 // [Token.Validate] or [Claims.Validate]. Authorization servers build a [Claims]
-// and call [Claims.Encode] to produce a payload for their signer, paired with
-// [NewHeader].
+// directly or with [Builder] and call Encode to produce a payload for their
+// signer, paired with [NewHeader].
+//
+// # Sender-constrained tokens
+//
+// The cnf claim (RFC 7800) is carried as [Confirmation] and binds a token to a
+// DPoP key (jkt, RFC 9449) or mTLS certificate (x5t#S256, RFC 8705).
+// [WithDPoPKeyThumbprint] and [WithCertificateThumbprint] require that binding
+// at validation. The caller computes the thumbprint from the verified DPoP
+// proof or client certificate; this package only compares it — verifying the
+// proof or certificate is out of scope, like JWS verification.
 //
 // All validation failures wrap a sentinel (see the Err* variables) so a caller
 // can map any of them to the RFC 6750 invalid_token error with errors.Is.

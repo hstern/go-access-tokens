@@ -11,7 +11,10 @@ It is a claim-set codec for the RFC 9068 access token — typed Go
 structs for the `at+jwt` header and the §2.2 claim set, a stdlib
 (`encoding/base64` + `encoding/json`) decoder and encoder, and
 validation of the §4 claim MUSTs (required claims present, `typ` is
-`at+jwt`, `aud` names the resource server, time validity). Zero
+`at+jwt`, `aud` names the resource server, time validity). It also
+carries the `cnf` sender-constraining binding (RFC 9449 DPoP / RFC 8705
+mTLS) and checks it on request, provides a fluent `Builder` for the
+producer side, and an RFC 6750 `BearerToken` request helper. Zero
 non-test dependencies — standard library only.
 
 It is not a JWT/JOSE stack. The following are deliberately out of
@@ -22,6 +25,13 @@ scope and belong in dedicated libraries:
   the JWS with a JOSE library (for example
   [`github.com/go-jose/go-jose`](https://github.com/go-jose/go-jose))
   and hand the verified token, or its claims, to this library.
+- **JWE decryption.** Encrypted access tokens are recognized (`Parse`
+  returns `ErrEncrypted`) but not decrypted — decrypt with a JOSE
+  library, then pass the plaintext payload to `ParseClaims`.
+- **DPoP-proof / client-certificate verification.** The library checks
+  that the token's `cnf` binding matches a thumbprint *you* supply; it
+  does not verify the DPoP proof JWT or the TLS client certificate
+  (that crypto is the caller's, same boundary as JWS verification).
 - **Key discovery / JWKS.** Fetching and caching issuer signing keys
   is the JOSE / discovery layer's job.
 - **Issuer & authorization-server metadata discovery** (RFC 8414, OIDC
@@ -32,9 +42,9 @@ scope and belong in dedicated libraries:
 
 ## Status
 
-**v0.1.0** — initial release. Pre-1.0: the public API may still change
-within the `v0.x` series per [SemVer](https://semver.org/). Runtime
-dependencies: standard library only.
+**v0.2.0.** Pre-1.0: the public API may still change within the `v0.x`
+series per [SemVer](https://semver.org/). Runtime dependencies: standard
+library only.
 
 ## Install
 
@@ -76,20 +86,44 @@ and use `accesstoken.ParseClaims(payload)` + `claims.Validate(...)`.
 ### Authorization server — build an access token
 
 ```go
-c := &accesstoken.Claims{
-	Issuer:   "https://as.example.com/",
-	Subject:  "user-123",
-	Audience: accesstoken.Audience{"https://rs.example.com/"},
-	Expires:  accesstoken.NewNumericDate(time.Now().Add(time.Hour)),
-	IssuedAt: accesstoken.NewNumericDate(time.Now()),
-	JWTID:    "id-1",
-	ClientID: "client-abc",
-}
-c.SetScope("read", "write")
+payload, err := accesstoken.NewBuilder().
+	Issuer("https://as.example.com/").
+	Subject("user-123").
+	Audience("https://rs.example.com/").
+	ClientID("client-abc").
+	ID("id-1").
+	Lifetime(time.Now(), time.Hour). // sets iat=now, exp=now+1h
+	Scope("read", "write").
+	Encode()                         // strict: errors if a required claim is missing
 
-payload, err := c.Encode()           // strict: errors if a required claim is missing
 header := accesstoken.NewHeader("RS256", "key-1") // {"typ":"at+jwt",...}
 // ... sign header + payload with your JOSE library ...
+```
+
+The plain `&accesstoken.Claims{...}` struct + `c.Encode()` works too if you
+prefer it over the builder.
+
+### Sender-constrained tokens (DPoP / mTLS) and bearer extraction
+
+Bind a token to a DPoP key (RFC 9449) or mTLS certificate (RFC 8705) when
+issuing, and require the binding when validating. You compute the thumbprint
+from the verified proof / certificate; the library checks the `cnf` claim:
+
+```go
+// issuing: bind to the DPoP key
+payload, _ := accesstoken.NewBuilder().
+	/* required claims … */
+	DPoPKeyThumbprint(jkt). // RFC 7638 JWK thumbprint of the DPoP key
+	Encode()
+
+// resource server: pull the bearer token, then require the binding
+raw, err := accesstoken.BearerToken(req) // RFC 6750 Authorization: Bearer
+tok, _ := accesstoken.Parse(raw)         // (verify its JWS signature out of band)
+err = tok.Validate(
+	accesstoken.WithIssuer("https://as.example.com/"),
+	accesstoken.WithAudience("https://rs.example.com/"),
+	accesstoken.WithDPoPKeyThumbprint(jktFromProof), // ErrConfirmationMismatch on miss
+)
 ```
 
 ### Typed extension claims
