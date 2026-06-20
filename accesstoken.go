@@ -19,9 +19,10 @@
 //  2. verify its JWS signature with a JOSE library;
 //  3. hand the token here to decode and validate the RFC 9068 claim profile.
 //
-// Use [BearerToken] to pull the token from an [*net/http.Request] (RFC 6750),
-// then [Parse] for the compact token string (header + claims), or [ParseClaims]
-// when your JOSE layer already gave you the verified payload bytes. Then call
+// Extract the token from the request with an RFC 6750 transport helper such as
+// github.com/hstern/go-bearer-token, then [Parse] for the compact token string
+// (header + claims), or [ParseClaims] when your JOSE layer already gave you the
+// verified payload bytes. Then call
 // [Token.Validate] or [Claims.Validate]. Authorization servers build a [Claims]
 // directly or with [Builder] and call Encode to produce a payload for their
 // signer, paired with [NewHeader].

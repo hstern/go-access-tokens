@@ -80,8 +80,9 @@ func verifyAndValidate(raw string, key any, extra ...accesstoken.Option) (*acces
 
 `claims.Validate` returns an `*accesstoken.ValidationError` wrapping a sentinel
 (`ErrExpired`, `ErrAudienceMismatch`, …). At the HTTP boundary, map any of them
-to an RFC 6750 `invalid_token` 401 response. Use `accesstoken.BearerToken(r)` to
-pull the token from the `Authorization: Bearer` header first.
+to an RFC 6750 `invalid_token` 401 response. Use `bearer.Token(r)` from
+[`go-bearer-token`](https://github.com/hstern/go-bearer-token) to pull the token
+from the `Authorization: Bearer` header first.
 
 ## 2. Decrypt an encrypted access token (JWE)
 
@@ -215,10 +216,11 @@ import (
 	"net/http"
 
 	accesstoken "github.com/hstern/go-access-tokens"
+	bearer "github.com/hstern/go-bearer-token"
 )
 
 func validateMTLS(r *http.Request, sigKey any) (*accesstoken.Claims, error) {
-	raw, err := accesstoken.BearerToken(r)
+	raw, err := bearer.Token(r)
 	if err != nil {
 		return nil, err
 	}

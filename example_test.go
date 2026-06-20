@@ -6,7 +6,6 @@ package accesstoken_test
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	accesstoken "github.com/hstern/go-access-tokens"
@@ -117,18 +116,4 @@ func ExampleBuilder() {
 	fmt.Println(string(payload))
 	// Output:
 	// {"iss":"https://as.example.com/","sub":"user-123","aud":"https://rs.example.com/","exp":1600003600,"iat":1600000000,"jti":"id-1","client_id":"client-abc","scope":"read write"}
-}
-
-// ExampleBearerToken extracts the token from an Authorization header (RFC 6750).
-func ExampleBearerToken() {
-	req, _ := http.NewRequest(http.MethodGet, "https://rs.example.com/", nil)
-	req.Header.Set("Authorization", "Bearer eyJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiJ1In0.sig")
-
-	raw, err := accesstoken.BearerToken(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(raw)
-	// Output: eyJ0eXAiOiJhdCtqd3QifQ.eyJzdWIiOiJ1In0.sig
 }
