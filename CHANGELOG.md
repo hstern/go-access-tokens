@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- `BearerToken` and `ErrNoBearerToken` (added in v0.2.0). RFC 6750 Bearer Token
+  Usage is a distinct specification from the RFC 9068 profile this library
+  implements, and pulling a token off the `Authorization` header is a transport
+  concern, not a claim-set concern. That helper now lives in the dedicated
+  [`go-bearer-token`](https://github.com/hstern/go-bearer-token) package
+  (`bearer.Token` / `bearer.ErrNoToken`), which additionally covers the §2.2
+  form-body and §2.3 query transports and validates the §2.1 `b64token` grammar.
+  Removing it keeps this library's runtime dependency set empty — standard
+  library only. A resource server composes the two: extract with
+  `go-bearer-token`, then decode and validate the claims here. **Breaking:**
+  callers using the v0.2.0 helper import `go-bearer-token` and call
+  `bearer.Token` instead.
+
 ## [0.2.0] - 2026-06-20
 
 ### Added

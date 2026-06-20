@@ -13,9 +13,13 @@ structs for the `at+jwt` header and the §2.2 claim set, a stdlib
 validation of the §4 claim MUSTs (required claims present, `typ` is
 `at+jwt`, `aud` names the resource server, time validity). It also
 carries the `cnf` sender-constraining binding (RFC 9449 DPoP / RFC 8705
-mTLS) and checks it on request, provides a fluent `Builder` for the
-producer side, and an RFC 6750 `BearerToken` request helper. Zero
-non-test dependencies — standard library only.
+mTLS) and checks it on request, and provides a fluent `Builder` for the
+producer side. Zero non-test dependencies — standard library only.
+
+Bearer-token transport (RFC 6750 — pulling the token off the
+`Authorization` header) is a separate concern and lives in
+[`go-bearer-token`](https://github.com/hstern/go-bearer-token); a resource
+server composes the two.
 
 It is not a JWT/JOSE stack. The following are deliberately out of
 scope and belong in dedicated libraries:
@@ -109,7 +113,7 @@ header := accesstoken.NewHeader("RS256", "key-1") // {"typ":"at+jwt",...}
 The plain `&accesstoken.Claims{...}` struct + `c.Encode()` works too if you
 prefer it over the builder.
 
-### Sender-constrained tokens (DPoP / mTLS) and bearer extraction
+### Sender-constrained tokens (DPoP / mTLS)
 
 Bind a token to a DPoP key (RFC 9449) or mTLS certificate (RFC 8705) when
 issuing, and require the binding when validating. You compute the thumbprint
@@ -123,8 +127,8 @@ payload, _ := accesstoken.NewBuilder().
 	Encode()
 
 // resource server: pull the bearer token, then require the binding
-raw, err := accesstoken.BearerToken(req) // RFC 6750 Authorization: Bearer
-tok, _ := accesstoken.Parse(raw)         // (verify its JWS signature out of band)
+raw, err := bearer.Token(req) // RFC 6750, from github.com/hstern/go-bearer-token
+tok, _ := accesstoken.Parse(raw) // (verify its JWS signature out of band)
 err = tok.Validate(
 	accesstoken.WithIssuer("https://as.example.com/"),
 	accesstoken.WithAudience("https://rs.example.com/"),
