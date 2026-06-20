@@ -32,7 +32,9 @@ scope and belong in dedicated libraries:
 
 ## Status
 
-Bootstrap / pre-v0.1.0. The public API is not yet stable.
+**v0.1.0** — initial release. Pre-1.0: the public API may still change
+within the `v0.x` series per [SemVer](https://semver.org/). Runtime
+dependencies: standard library only.
 
 ## Install
 

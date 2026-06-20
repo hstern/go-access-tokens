@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-20
+
 ### Added
 
 - Typed `Claims` for the RFC 9068 §2.2 access-token claim set, with `Audience`
@@ -20,3 +22,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `*ValidationError` wrapping `errors.Is`-matchable sentinels.
 - `Claims.Encode` (strict required-claim check at the marshal boundary) plus
   `ScopeValues`/`SetScope` and `GetExtra`/`SetExtra` helpers.
+
+[Unreleased]: https://github.com/hstern/go-access-tokens/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/hstern/go-access-tokens/releases/tag/v0.1.0
